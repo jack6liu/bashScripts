@@ -1,0 +1,4 @@
+SS_PORT=12121
+SS_PASS=jack6-ss-ru
+SS_ENCRYPT=chacha20
+

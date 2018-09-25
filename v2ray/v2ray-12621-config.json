@@ -1,0 +1,73 @@
+{
+	"log": {
+		"access": "/var/log/v2ray/access.log",
+		"error": "/var/log/v2ray/error.log",
+		"loglevel": "warning"
+	},
+	"inbound": {
+		"port": 12621,
+		"protocol": "vmess",
+		"settings": {
+			"clients": [{
+					"id": "27ecd67f-93a3-4754-afee-5ffdd50acb37",
+					"level": 1,
+					"alterId": 62
+				}
+			],
+			"detour": {
+				"to": "dynamicPort"
+			}
+		},
+		"streamSettings": {
+			"network": "mkcp",
+			"kcpSettings": {
+				"mtu": 1350,
+				"tti": 20,
+				"uplinkCapacity": 20,
+				"downlinkCapacity": 20,
+				"congestion": true,
+				"readBufferSize": 1,
+				"writeBufferSize": 1,
+				"header": {
+					"type": "none"
+				}
+			}
+		}
+	},
+	"inboundDetour": [{
+			"protocol": "vmess",
+			"port": "20001-25000",
+			"tag": "dynamicPort",
+			"settings": {
+				"default": {
+					"level": 1,
+					"alterId": 32
+				}
+			},
+			"allocate": {
+				"strategy": "random",
+				"concurrency": 5,
+				"refresh": 5
+			},
+			"streamSettings": {
+				"network": "mkcp",
+				"kcpSettings": {
+					"mtu": 1350,
+					"tti": 20,
+					"uplinkCapacity": 20,
+					"downlinkCapacity": 20,
+					"congestion": true,
+					"readBufferSize": 1,
+					"writeBufferSize": 1,
+					"header": {
+						"type": "none"
+					}
+				}
+			}
+		}
+	],
+	"outbound": {
+		"protocol": "freedom",
+		"settings": {}
+	}
+}

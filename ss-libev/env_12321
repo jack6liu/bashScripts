@@ -1,0 +1,3 @@
+SS_PORT=12321
+SS_PASS=jack6-ss-ru
+SS_ENCRYPT=chacha20-ietf-poly1305
