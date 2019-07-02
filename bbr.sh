@@ -1,162 +1,121 @@
-#!/bin/bash
-#set -e
-#
-# global variables
-#
-export _scriptName=$(basename $0)
-export _fileName=$(readlink -f $0)
-export _dirName=$(dirname ${_fileName})
+#!/usr/bin/env bash
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+export PATH
 
-getLocalTime() {
-    printf "%.23s" "$(date '+%Y-%m-%d %H:%M:%S.%N')"
+#=================================================
+#	System Required: Debian/Ubuntu
+#	Description: 魔改版BBR
+#	Version: 1.0
+#	Author: 雨落无声
+#	Blog: https://www.zhujiboke.com
+#	From https://doub.io
+#=================================================
+
+#Check Root
+[ $(id -u) != "0" ] && { echo "Error: You must be root to run this script"; exit 1; }
+
+#Check OS
+if [[ -f /etc/redhat-release ]]; then
+		release="centos"
+	elif cat /etc/issue | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+	elif cat /proc/version | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /proc/version | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+fi
+bit=`uname -m`
+dir=`pwd`
+installbbr(){
+	#Install GCC
+	apt-get update
+	apt-get install build-essential -y
+	apt-get install make gcc-4.9 -y
+
+
+	#Download Kernel V4.10
+	wget -O headers-all.deb http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.15/linux-headers-4.10.15-041015_4.10.15-041015.201705080411_all.deb
+	dpkg -i headers-all.deb
+
+	if [[ ${bit} == "i386" ]]; then
+		wget --no-check-certificate -O headers.deb http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.15/linux-headers-4.10.15-041015-generic_4.10.15-041015.201705080411_i386.deb
+		wget --no-check-certificate -O image.deb http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.15/linux-image-4.10.15-041015-generic_4.10.15-041015.201705080411_i386.deb
+	elif [[ ${bit} == "x86_64" ]]; then
+		wget --no-check-certificate -O headers.deb http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.15/linux-headers-4.10.15-041015-generic_4.10.15-041015.201705080411_amd64.deb
+		wget --no-check-certificate -O image.deb http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.10.15/linux-image-4.10.15-041015-generic_4.10.15-041015.201705080411_amd64.deb
+	else
+			echo -e "不支持 ${bit} !" && exit 1
+	fi
+
+	dpkg -i headers.deb
+	dpkg -i image.deb
+	rm -rf headers-all.deb
+	rm -rf headers.deb image.deb
+
+	#Uninstall Other Kernel
+	deb_total=`dpkg -l | grep linux-image | awk '{print $2}' | grep -v "4.10.15" | wc -l`
+	if [ "${deb_total}" > "1" ]; then
+		echo -e "检测到 ${deb_total} 个其余内核，开始卸载..."
+		for((integer = 1; integer <= ${deb_total}; integer++))
+		do
+			deb_del=`dpkg -l|grep linux-image | awk '{print $2}' | grep -v "4.10.15" | head -${integer}`
+			echo -e "开始卸载 ${deb_del} 内核..."
+			apt-get purge -y ${deb_del}
+			echo -e "卸载 ${deb_del} 内核卸载完成，继续..."
+		done
+		deb_total=`dpkg -l|grep linux-image | awk '{print $2}' | grep -v "4.10.15" | wc -l`
+		if [ "${deb_total}" = "0" ]; then
+			echo -e "内核卸载完毕，继续..."
+		else
+			echo -e " 内核卸载异常，请检查 !" && exit 1
+		fi
+	else
+		echo -e " 检测到 内核 数量不正确，请检查 !" && exit 1
+	fi
+
+	#Finish Install
+	update-grub
+	echo -e "\033[42;37m[注意]\033[0m 重启VPS后，请重新运行脚本开启魔改BBR \033[42;37m bash bbr.sh start \033[0m"
+	stty erase '^H' && read -p "需要重启VPS后，才能开启BBR，是否现在重启 ? [Y/n] :" yn
+	[ -z "${yn}" ] && yn="y"
+		if [[ $yn == [Yy] ]]; then
+			echo -e "\033[41;37m[信息]\033[0m VPS 重启中..."
+			reboot
+		fi
 }
 
-log() {
-    currentTime=$(getLocalTime)
-    prefixString="[${currentTime}] --> "
-    echo "${prefixString} $@"
+
+startbbr(){
+    mkdir -p $dir/tsunami && cd $dir/tsunami
+	wget --no-check-certificate -O ./tcp_tsunami.c https://raw.githubusercontent.com/ILLKX/BBR-Mod-backup/master/tcp_tsunami.c
+	echo "obj-m:=tcp_tsunami.o" > Makefile
+	make -C /lib/modules/$(uname -r)/build M=`pwd` modules CC=/usr/bin/gcc-4.9
+	insmod tcp_tsunami.ko
+    	cp -rf ./tcp_tsunami.ko /lib/modules/$(uname -r)/kernel/net/ipv4
+    	depmod -a
+    	modprobe tcp_tsunami
+	rm -rf /etc/sysctl.conf
+	wget -O /etc/sysctl.conf -N --no-check-certificate https://raw.githubusercontent.com/FunctionClub/YankeeBBR/master/sysctl.conf
+	sysctl -p
+    cd .. && rm -rf $dir/tsunami
+	echo "魔改版BBR启动成功！"
 }
 
-install_pkg() {
-    apt-get -qq -o:Dpkg::Use-Pty=0 -y install $@
-}
 
-prettyOutput() {
-    $@ 2>&1 | while read -r line; do echo -e "\\t $line"; done
-}
-
-usage() {
-    cat << EOT
-
-Usage : bash ${_scriptName} [OPTION] ...
-  Install mainline kernel from ubuntu mainline repo
-http://kernel.ubuntu.com/~kernel-ppa/mainline/
-
-Options:
-  -h, --help                Display this message
-  -v, --version=VERSION     VERSION of mainline kernel, default value is 4.9.8
-  -c, --clean               Remove all old version kernels installed on this system, default value is FALSE
-  -r, --reboot              Reboot the system at the script end, default value is FALSE
-
-
-Exit status:
-  0   if OK,
-  !=0 if serious problems.
-
-EOT
-}
-
-#
-#if [ $# -eq 0 ]; then
-#    usage;
-#    exit 1;
-#fi
-
-## ---- BEGIN of get options ----
-OPTS=$(getopt -o hv:cr --long help,version:,clean,reboot, \
-      -n "${_scriptName}" -- "$@")
-
-if [ $? != 0 ] ; then
-    echo "${_scriptName} terminated..." >&2
-    exit 1
-fi
-
-# Note the quotes around `${OPTS}': they are essential!
-eval set -- "${OPTS}"
-
-VERSION=${VERSION:='4.11.12'}
-CLEAN=${CLEAN:='FALSE'}
-REBOOT=${REBOOT:='FALSE'}
-
-while true; do
-  case "$1" in
-    -h | --help )
-        usage
-        exit 0 ;;
-    -v | --version )
-        VERSION="$2"
-        shift 2 ;;
-    -c | --clean )
-        CLEAN="TRUE"
-        shift ;;
-    -r | --reboot )
-        REBOOT="TRUE"
-        shift ;;
-    -- )
-        shift
-        break ;;
-    * )
-        break ;;
-  esac
-done
-
-## ---- FINISH of get options ----
-log "comparing with installed kernel ..."
-CURRENT=$(uname -r | cut -d '-' -f 1)
-
-# check if the version is installed
-if [[ "${VERSION}" == "${CURRENT}" ]]; then
-    log "the version: ${VERSION} is already installed!"
-    #exit 0
-fi
-
-# set base url
-log "checking the given kernel version ..."
-BASE_URL="http://kernel.ubuntu.com/~kernel-ppa/mainline/v"${VERSION}
-
-# check if the version number exists
-ISVALID=$(curl -I -s ${BASE_URL} | head -n 1 | cut -d$' ' -f2)
-if [[ "${ISVALID}" -eq 404 ]]; then
-    log "the version: ${VERSION} is not valid!"
-    exit ${ISVALID}
-fi
-
-# download packages
-cd ~
-
-# install tsunami bbr mod
-#!/bin/bash
-#log "install pkgs needed for make tsunami mod ..."
-#prettyOutput install_pkg build-essential make gcc-4.9
-
-#log "get tsunami bbr source code..."
-#mkdir -p ${_dirName}/tsunami && cd ${_dirName}/tsunami
-#curl -k -L -o ./tcp_tsunami.c https://gist.github.com/anonymous/ba338038e799eafbba173215153a7f3a/raw/55ff1e45c97b46f12261e07ca07633a9922ad55d/tcp_tsunami.c
-
-#log "build tsunami bbr mod ..."
-#echo "obj-m:=tcp_tsunami.o" > Makefile
-#modulePath=$(ls -d /lib/modules/${VERSION}*)
-#make -C ${modulePath}/build M=`pwd` modules CC=/usr/bin/gcc-4.9
-
-#log "load tsunami bbr mod ..."
-#insmod tcp_tsunami.ko
-#cp -rf ./tcp_tsunami.ko ${modulePath}/kernel/net/ipv4
-
-#depmod -a
-#modprobe tcp_tsunami
-
-if [[ ! "$(grep tcp_bbr /etc/modules)" ]]; then
-    echo "tcp_bbr" | tee -a /etc/modules
-fi
-
-log "config and enable tsunami bbr mod ..."
-rm -rf /etc/sysctl.conf
-curl -k -L -o /etc/sysctl.conf https://raw.githubusercontent.com/FunctionClub/YankeeBBR/master/sysctl.conf
-sysctl -p
-
-#cd .. && rm -rf ${workdir}/tsunami
-
-
-# remove old versions
-#if [[ "${CLEAN}" == "TRUE" ]]; then
-    log "uninstalling old kernels installed ..."
-    OLD_PKGS=$(dpkg-query -l | egrep "linux-headers|linux-image" | grep -v ${VERSION} | awk '{print $2}')
-    prettyOutput apt -y -qq -o:Dpkg::Use-Pty=0 remove ${OLD_PKGS}
-    prettyOutput apt -y -qq -o:Dpkg::Use-Pty=0 purge ${OLD_PKGS}
-#fi
-if [[ "${REBOOT}" == "TRUE" ]]; then
-    log "system will be reboot in 3 secends ..."
-    sleep 3
-    /sbin/reboot
-fi
-
+action=$1
+[ -z $1 ] && action=install
+case "$action" in
+	install|start)
+	${action}bbr
+	;;
+	*)
+	echo "输入错误 !"
+	echo "用法: { install | start }"
+	;;
+esac

@@ -102,7 +102,7 @@ fi
 
 # set base url
 log "checking the given kernel version ..."
-BASE_URL="http://kernel.ubuntu.com/~kernel-ppa/mainline/v"${VERSION}
+BASE_URL="https://kernel.ubuntu.com/~kernel-ppa/mainline/v"${VERSION}
 
 # check if the version number exists
 ISVALID=$(curl -I -s ${BASE_URL} | head -n 1 | cut -d$' ' -f2)
@@ -125,56 +125,38 @@ done
 
 # install downloaded kernel packages
 log "installing downloaded packages ..."
-if [[ "$(dpkg-query -l | egrep linux-image-${VERSION})" ]]; then
-    log "linux-image-${VERSION} is installed, skipping ..."
-else
-    prettyOutput dpkg -i linux-image-${VERSION}*_amd64.deb
-fi
-
-if [[ "$(dpkg-query -l | egrep linux-headers-${VERSION} | grep all)" ]]; then
-    log "linux-image-${VERSION} is installed, skipping ..."
-else
-    prettyOutput dpkg -i linux-headers-${VERSION}*_all.deb
-fi
-
-if [[ "$(dpkg-query -l | egrep linux-headers-${VERSION} | grep amd64)" ]]; then
-    log "linux-image-${VERSION} is installed, skipping ..."
-else
-    prettyOutput dpkg -i linux-headers-${VERSION}*_amd64.deb
-fi
+prettyOutput dpkg -i *.deb
 
 cd ~
 
 # install tsunami bbr mod
-log "install pkgs needed for make tsunami mod ..."
-prettyOutput install_pkg build-essential make gcc-4.9
+#log "install pkgs needed for make tsunami mod ..."
+#prettyOutput install_pkg make gcc
 
-log "get tsunami bbr source code..."
-mkdir -p ${_dirName}/tsunami && cd ${_dirName}/tsunami
-curl -k -L -o ./tcp_tsunami.c https://gist.github.com/anonymous/ba338038e799eafbba173215153a7f3a/raw/55ff1e45c97b46f12261e07ca07633a9922ad55d/tcp_tsunami.c
+#log "get tsunami bbr source code..."
+#mkdir -p ${_dirName}/tsunami && cd ${_dirName}/tsunami
+#curl -k -L -o ./tcp_tsunami.c https://raw.githubusercontent.com/KozakaiAya/TCP_BBR/master/v5.0/tcp_tsunami.c
 
-log "build tsunami bbr mod ..."
-echo "obj-m:=tcp_tsunami.o" > Makefile
-modulePath=$(ls -d /lib/modules/${VERSION}*)
-make -C ${modulePath}/build M=`pwd` modules CC=/usr/bin/gcc-4.9
+#log "build tsunami bbr mod ..."
+#echo "obj-m:=tcp_tsunami.o" > Makefile
+#modulePath=$(ls -d /lib/modules/${VERSION}*)
+#make -C ${modulePath}/build M=`pwd` modules CC=/usr/bin/gcc
 
-log "load tsunami bbr mod ..."
-insmod tcp_tsunami.ko
-cp -rf ./tcp_tsunami.ko ${modulePath}/kernel/net/ipv4
+#log "load tsunami bbr mod ..."
+#if [[ ! "$(grep tcp_bbr /etc/modules)" ]]; then
+    #echo "tcp_bbr" | tee -a /etc/modules
+#    echo 'tcp_tsunami' | tee -a /etc/modules
+#fi
+#depmod
+#modprobe tcp_tsunami
+#cp -rf ./tcp_tsunami.ko ${modulePath}/kernel/drivers/
 
-depmod -a
-modprobe tcp_tsunami
+#log "config and enable tsunami bbr mod ..."
+#rm -rf /etc/sysctl.conf
+#curl -k -L -o /etc/sysctl.conf https://raw.githubusercontent.com/FunctionClub/YankeeBBR/master/sysctl.conf
+#sysctl -p
 
-if [[ ! "$(grep tcp_bbr /etc/modules)" ]]; then
-    echo "tcp_bbr" | tee -a /etc/modules
-fi
-
-log "config and enable tsunami bbr mod ..."
-rm -rf /etc/sysctl.conf
-curl -k -L -o /etc/sysctl.conf https://raw.githubusercontent.com/FunctionClub/YankeeBBR/master/sysctl.conf
-sysctl -p
-
-cd .. && rm -rf ${workdir}/tsunami
+#cd .. && rm -rf ${workdir}/tsunami
 
 
 # remove old versions

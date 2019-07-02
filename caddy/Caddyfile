@@ -1,0 +1,8 @@
+https://ws.jack6liu.ga:8843
+{
+    proxy / 92.38.184.37:12631 {
+        websocket
+        header_upstream -Origin
+        insecure_skip_verify
+    }
+}

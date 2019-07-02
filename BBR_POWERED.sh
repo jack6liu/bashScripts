@@ -50,7 +50,7 @@ KernelVer='';
 KernelBitVer='';
 MainURL='http://kernel.ubuntu.com/~kernel-ppa/mainline'
 [ -n "$tmpKernelVer" ] && {
-wget -qO /dev/null "$MainURL/$tmpKernelVer"
+wget -qO /dev/null "$MainURL/$tmpKernelVer/"
 [ $? -ne '0' ] && echo 'Please input a vaild kernel version! exp: v4.11.9.' && exit 1
 KernelVer="$tmpKernelVer"
 }
@@ -68,7 +68,7 @@ HeadersFile="$(wget -qO- "$ReleaseURL" |awk -F '">|href="' '/generic.*.deb/{prin
 [ -n "$HeadersFile" ] && HeadersAll="$(echo "$HeadersFile" |sed 's/-generic//g;s/_'${KernelBitVer}'.deb/_all.deb/g')"
 [ -z "$HeadersAll" ] && echo "Error! Get Linux Headers for All." && exit 1
 echo "$HeadersFile" | grep -q "$(uname -r)"
-[ $? -ne '0' ] && echo "Error! Header not be matched by Linux Kernel." && exit 1
+[ $? -eq '0' ] && echo "Error! Header not be matched by Linux Kernel." && exit 1
 echo -ne "Download Kernel Headers for All\n\t$HeadersAll\n"
 wget -qO "$HeadersAll" "$ReleaseURL/$HeadersAll"
 echo -ne "Install Kernel Headers for All\n\t$HeadersAll\n"

@@ -15,9 +15,13 @@
           "alterId": 61
         }
       ]
+    },
+    "streamSettings": {
+      "network": "ws"
     }
   },
-  "outbound": {
+  "outbound":
+  {
     "protocol": "freedom",
     "settings": {}
   }
