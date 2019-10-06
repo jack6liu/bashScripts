@@ -6,7 +6,7 @@ PORT_2="12621"
 PORT_3="12631"
 VER=${VER:=latest}
 
-CADDY_PORT="8843"
+CADDY_PORT="8883"
 
 if [[ $# = 1 ]]; then
     VER=$1
