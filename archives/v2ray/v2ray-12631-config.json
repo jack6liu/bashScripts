@@ -4,9 +4,16 @@
     "error": "/var/log/v2ray/error.log",
     "loglevel": "warning"
   },
+  "dns": {
+    "servers": [
+       "https+local://1.1.1.1/dns-query",
+       "localhost"
+    ]
+  },
   "inbounds": [
     {
       "port": 12631,
+      "listen":"127.0.0.1",
       "protocol": "vmess",
       "settings": {
         "clients": [
@@ -20,9 +27,16 @@
       },
       "streamSettings": {
 	 "network": "ws",
-	 "security": "auto",
+	 "security": "none",
+	 "tlsSettingsOmit": {
+		 "serverName": "ws.go2see.xyz",
+		 "allowInsecure": true
+	 },
 	 "wsSettings": {
- 	   "path": "/"
+ 	   "path": "/ray",
+	   "headers": {
+		   "Host": "ws.go2see.xyz"
+	   }
 	 }
       }
     }

@@ -1,8 +1,20 @@
-https://ws.jack6liu.ga:8843
+go2see.xyz
 {
-    proxy / 92.38.184.37:12631 {
-        websocket
+    proxy / https://jack6liu.wordpress.com/ {
         header_upstream -Origin
-        insecure_skip_verify
+    }
+}
+
+ws0.go2see.xyz
+{
+    proxy / https://jack6liu.wordpress.com/ {
+        header_upstream -Origin
+    }
+}
+
+h20.go2see.xyz
+{
+    proxy / https://jack6liu.wordpress.com/ {
+        header_upstream -Origin
     }
 }

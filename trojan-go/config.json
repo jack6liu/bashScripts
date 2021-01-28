@@ -1,0 +1,18 @@
+{
+    "run_type": "server",
+    "local_addr": "0.0.0.0",
+    "local_port": 443,
+    "remote_addr": "ws0.go2see.xyz",
+    "remote_port": 80,
+    "log_level": 2,
+    "password": [
+        "2yu5SurWztutamrLQBRNZ4mEQSDyWUaOsnYtudj5Dw"
+    ],
+    "ssl": {
+        "cert": "/etc/ssl/trojan-go/trojan-go.crt",
+        "key": "/etc/ssl/trojan-go/trojan-go.key",
+        "sni": "ws0.go2see.xyz",
+	"fallback_addr": "ws0.go2see.xyz",
+        "fallback_port": 8443
+    }
+}
