@@ -1,4 +1,0 @@
-SS_PORT=12311
-SS_PASS=jack6-ss-ru
-SS_ENCRYPT=chacha20-ietf
-LOCAL_PORT=12312
