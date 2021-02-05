@@ -8,7 +8,7 @@ VER=${VER:=latest}
 DM_NAME_1="h20.go2see.xyz"
 DM_NAME_2="ws0.go2see.xyz"
 
-CADDY_PORT="443"
+CADDY_PORT="8443"
 
 if [[ $# = 1 ]]; then
     VER=$1
@@ -39,7 +39,8 @@ cleanup "${INST}-${PORT_3}"
 cleanup "caddy-${CADDY_PORT}"
 docker run --detach \
            --name "caddy-${CADDY_PORT}"  \
-	   --publish ${CADDY_PORT}:${CADDY_PORT} \
+	   --publish ${CADDY_PORT}:443 \
+	   --publish 8080:80 \
            --restart always  \
            --volume /etc/caddy/Caddyfile:/etc/Caddyfile \
            --volume /etc/ssl/caddy:/root/.caddy \

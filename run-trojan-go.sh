@@ -1,9 +1,9 @@
 #!/bin/bash
 
 INST="trojan-go"
-PORT="443"
+PORT="19443"
 VER=${VER:=latest}
-DM_NAME="ws0.go2see.xyz"
+DM_NAME="h20.go2see.xyz"
 
 if [[ $# = 1 ]]; then
     VER=$1
